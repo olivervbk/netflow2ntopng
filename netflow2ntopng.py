@@ -184,7 +184,7 @@ if __name__ == "__main__":
 		logging.debug("Got packet from:%s" % (sensor_ip))
 
         # TODO should remove those after some time of inactivity...
-		if sensor_ip not in nflow_report_threads:
+		if sensor_ip not in nflow_reporters:
 			nflow_reporters[sensor_ip] = {
 				"packet_count": 0,
 				"bytes_count" : 0,
@@ -206,10 +206,10 @@ if __name__ == "__main__":
 						avg_pps   = p_count, # TODO this needs to be improved
 						zmq_flow_exports = r_count)
 					time.sleep(1)
-			t = threading.Thread(target=report_metrics,args=(sensor_ip))
+			t = threading.Thread(target=report_metrics,args=(sensor_ip,))
 			t.daemon=True
 			t.start()
-			nflow_reports[sensor_ip]["thread"] = t
+			nflow_reporters[sensor_ip]["thread"] = t
             
 		nflow_data = nflow_reporters[sensor_ip]	
 		try:
@@ -225,6 +225,7 @@ if __name__ == "__main__":
 			continue
 
 		flow_count = packet_contents["flow_count"]
+		logging.info("Got netflow v5 packet from %s: %s flows, %s bytes" % (sensor_ip, flow_count, len(flow_packet_contents)))
 		for flow_num in range(0, flow_count):
 			now = datetime.datetime.utcnow() # Timestamp for flow rcv
 			logging.debug("Parsing flow %s/%s" % (flow_num, flow_count))
